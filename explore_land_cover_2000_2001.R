@@ -1,5 +1,5 @@
 #' ---
-#' title: "review lulc doc" 
+#' title: "Review lulc doc" 
 #' author: Margaux
 #' output: github_document
 #' ---
@@ -50,9 +50,13 @@ lulc_00_01_plot(p2_all_lulc_data_cat, increment = sequence)
 
 #' Reproduce for all lc class 
 
-#' 2. Review proportion by lc diff
+#' 2. Review proportion by lc diff - bot plot
 
 #' Tidy
 # lulc_00_01 <- p2_all_lulc_data_cat %>%
 #   filter(Year %in% c('2000','2001')) %>%
 #   arrange(PRMS_segid) 
+
+#'plot boxplot
+
+
