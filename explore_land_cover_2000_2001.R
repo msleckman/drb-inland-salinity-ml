@@ -30,11 +30,14 @@ lulc_00_01_plot <- function(df, increment, years_filter = c('2000','2001')){
     j = 27
     lulc_00_01_subset <- lulc_00_01[(i-j):i,]
     
-  ##  Example plot #1
+  ##  Example plot #1 
   plt <- ggplot2::ggplot(lulc_00_01_subset,
+                         ## Only plotting 1 class for now. MUST plot across all lc classes!!!! 
                   aes(x = PRMS_segid, y = CAT_prop_lcClass_1, color = Year))+
     geom_point()+coord_flip()+ theme_bw()
   plt
+  
+  ## 
   
   ## Export
   filename <- glue::glue('subset_lulc_{i}.png')
@@ -50,7 +53,9 @@ lulc_00_01_plot(p2_all_lulc_data_cat, increment = sequence)
 
 #' Reproduce for all lc class 
 
-#' 2. Review proportion by lc diff - bot plot
+
+
+#' 3. Review proportion by lc diff - bot plot
 
 #' Tidy
 # lulc_00_01 <- p2_all_lulc_data_cat %>%
