@@ -8,11 +8,15 @@ suppressPackageStartupMessages(
   {library(tidyverse)
   library(rmarkdown)
   library(patchwork)
+  library(viridis)
   }
   )
 targets::tar_load(p2_all_lulc_data_cat)
+targets::tar_load(p2_all_lulc_data_tot)
 
-#' #' Splitting comid total values to a seq that is more easily plotted
+#' ### Initial point plot of diff per PRMS_segid
+
+#' Splitting comid total values to a seq that is more easily plotted
 sequence <- seq(27,459,17)
 
 #' Function to plot diff in 2000 and 2001 by comid id.
@@ -39,15 +43,16 @@ lulc_00_01_plot <- function(df, increment, years_filter, lc_category, output_pat
   ## Export
   filename <- glue::glue('subset_lulc_{i}.png')
   #print(filename)
-  ggsave(file.path(output_path,filename),width = 7, height = 6)
+  ggsave(file.path(output_path,filename), width = 7, height = 6)
   }
-  print(lulc_00_01_subset %>% head())
+  #print(lulc_00_01_subset %>% head())
   return(plt)
 }
 
-#' Broader graphing - 2000 and 2001
+#' Plot - 2000 and 2001
 ## generate plot - sifting through outputs  in finder
 path2000_2001 <- '3_visualize/land_cover_review/yr2000_2001'
+dir.create(path2000_2001,showWarnings = FALSE)
 
 for(i in 1:9){
   spec_path <- file.path(path2000_2001, glue::glue('CAT_prop_lcClass_{i}'))
@@ -59,10 +64,10 @@ for(i in 1:9){
                   lc_category = glue::glue('CAT_prop_lcClass_{i}'))
 }
 
-#' Broader graphing - 1990 to 2008
-## generate plot - sifting through outputs in finder
+#'  Plot - 1990 to 2008
+## generate plot - sifting through img outputs in finder
 path_1990_2008 <- '3_visualize/land_cover_review/yr1990_2008'
-dir.create(path,showWarnings = FALSE)
+dir.create(path_1990_2008,showWarnings = FALSE)
 
 for(i in 1:9){
   spec_path <- file.path(path_1990_2008, glue::glue('CAT_prop_lcClass_{i}'))
@@ -75,17 +80,22 @@ for(i in 1:9){
                   lc_category = glue::glue('CAT_prop_lcClass_{i}'))
   }
 
-#' 2. Review proportion by lc diff - bot plot
-library(viridis)
+#' ### 2. Review proportion by lc diff - bot plot
 
-year_filter <- c('2000','2001') 
+#' pre-defined obj
+year_filter <- c('2000','2001')
+all_lulc_data <- p2_all_lulc_data_cat
+pref <- 'CAT'
+
 #' Tidy
-lulc_00_01_subset <- p2_all_lulc_data_cat %>%
+lulc_00_01_subset <- all_lulc_data %>%
   filter(Year %in% year_filter) %>%
   arrange(PRMS_segid) %>% 
-  pivot_longer(cols = starts_with('CAT'),
+  pivot_longer(cols = starts_with(pref),
                names_to = 'LC_category',
                values_to = 'proportion_LC')
+
+#' a. initial plot
 
 plt1 <- ggplot2::ggplot(lulc_00_01_subset,
                        # Only plotting 1 class for now. MUST plot across all lc classes!!!! 
@@ -98,7 +108,6 @@ plt1 <- ggplot2::ggplot(lulc_00_01_subset,
   facet_grid(.~LC_category)+theme_classic()
 
 plt1
-
 
 plt1_class_subset <- ggplot2::ggplot(lulc_00_01_subset %>%
                                  filter(grepl('5|7|8|9|1|4',LC_category)),
@@ -113,9 +122,26 @@ plt1_class_subset <- ggplot2::ggplot(lulc_00_01_subset %>%
 
 plt1_class_subset
 
-#' Remove outliers
+plt1_class_subset_2 <- ggplot2::ggplot(lulc_00_01_subset %>%
+                                       filter(grepl('5|7|8',LC_category)),
+                                     aes(x = Year, y = proportion_LC, fill = Year))+
+  geom_boxplot(outlier.shape = 1, 
+               outlier.size = 0.5, outlier.color = 'black',
+               outlier.fill = 'grey', outlier.stroke = 0.2)+
+  scale_fill_viridis(discrete = TRUE, alpha=0.6, option="C")+
+  geom_jitter(color="grey", size=0.4, alpha=0.5)+
+  facet_grid(.~LC_category)+
+  theme_classic()
 
-lulc_00_01_subset_outlier_filter <- lulc_00_01_subset%>%
+plt1_class_subset_2
+
+# Some outliers causing difficulty in graphing
+
+#' b. Removing outliers 
+#'
+#' Note: a number of NAs are removed due to filtering out of outliers
+
+lulc_00_01_subset_outlier_filter <- lulc_00_01_subset %>%
   group_by(LC_category,Year) %>% 
   mutate(proportion_LC = as.numeric(proportion_LC),
          proportion_LC_filt = case_when(proportion_LC - quantile(proportion_LC)[4] > 1.5*IQR(proportion_LC) ~ NA_real_,
@@ -129,7 +155,7 @@ plt2 <- ggplot2::ggplot(lulc_00_01_subset_outlier_filter,
                outlier.size = 0.5, outlier.color = 'black',
                outlier.fill = 'grey', outlier.stroke = 0.2)+
   scale_fill_viridis(discrete = TRUE, alpha=0.6, option="C")+
-  #geom_jitter(color="grey", size=0.4, alpha=0.5)+
+  geom_jitter(color="grey", size=0.4, alpha=0.5)+
   facet_grid(.~LC_category)+theme_classic()
 
 plt2
@@ -160,10 +186,11 @@ plt2_class_subset_2 <- ggplot2::ggplot(lulc_00_01_subset_outlier_filter %>%
 
 plt2_class_subset_2
 
-#' Add more years
+#' c. Adding more years - outliers NOT removed
 year_filter <- c('1990','2000','2001','2008')
+
 #' Tidy
-lulc_00_01_subset <- p2_all_lulc_data_cat %>%
+lulc_00_01_subset <- all_lulc_data %>%
   filter(Year %in% year_filter) %>%
   arrange(PRMS_segid) %>% 
   pivot_longer(cols = starts_with('CAT'),
@@ -177,7 +204,7 @@ plt3 <- ggplot2::ggplot(lulc_00_01_subset,
                outlier.size = 0.5, outlier.color = 'black',
                outlier.fill = 'grey', outlier.stroke = 0.2)+
   scale_fill_viridis(discrete = TRUE, alpha=0.6, option="C")+
-  geom_jitter(color="grey", size=0.4, alpha=0.5)+
+  #geom_jitter(color="grey", size=0.4, alpha=0.5)+
   facet_grid(.~LC_category)+theme_classic()
 
 plt3
