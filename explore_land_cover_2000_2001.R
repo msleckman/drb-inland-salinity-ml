@@ -6,62 +6,204 @@
 
 suppressPackageStartupMessages(
   {library(tidyverse)
-  library(rmarkdown)}
+  library(rmarkdown)
+  library(patchwork)
+  }
   )
-
 targets::tar_load(p2_all_lulc_data_cat)
 
-#' Splitting comid total values to a seq that is more easily plotted
+#' #' Splitting comid total values to a seq that is more easily plotted
 sequence <- seq(27,459,17)
 
 #' Function to plot diff in 2000 and 2001 by comid id.
-#'
-#' Simply generating a bunch of plots locally here
+#' Generating a bunch of plots locally here
 
-lulc_00_01_plot <- function(df, increment, years_filter = c('2000','2001')){
-  
+lulc_00_01_plot <- function(df, increment, years_filter, lc_category, output_path){
+
   ## tidy
   lulc_00_01 <- df %>%
     filter(Year %in% years_filter) %>%
     arrange(PRMS_segid)
-  
-  ## subset every 20 
-  for(i in increment){    
+
+  ## subset every 20
+  for(i in increment){
     j = 27
     lulc_00_01_subset <- lulc_00_01[(i-j):i,]
-    
-  ##  Example plot #1 
+  ##  Example plot #1
   plt <- ggplot2::ggplot(lulc_00_01_subset,
-                         ## Only plotting 1 class for now. MUST plot across all lc classes!!!! 
-                  aes(x = PRMS_segid, y = CAT_prop_lcClass_1, color = Year))+
-    geom_point()+coord_flip()+ theme_bw()
-  plt
-  
-  ## 
-  
+                  aes(x = PRMS_segid, y = .data[[lc_category]], color = Year))+
+    geom_point()+
+    coord_flip()+
+    theme_bw()
+
   ## Export
   filename <- glue::glue('subset_lulc_{i}.png')
   #print(filename)
-  ggsave(here::here(paste0('3_visualize/',filename)),width = 7, height = 6)
+  ggsave(file.path(output_path,filename),width = 7, height = 6)
   }
   print(lulc_00_01_subset %>% head())
   return(plt)
 }
 
-## generate plot - sift through then in finder
-lulc_00_01_plot(p2_all_lulc_data_cat, increment = sequence)
+#' Broader graphing - 2000 and 2001
+## generate plot - sifting through outputs  in finder
+path2000_2001 <- '3_visualize/land_cover_review/yr2000_2001'
 
-#' Reproduce for all lc class 
+for(i in 1:9){
+  spec_path <- file.path(path2000_2001, glue::glue('CAT_prop_lcClass_{i}'))
+  dir.create(spec_path,showWarnings = FALSE)
+  lulc_00_01_plot(p2_all_lulc_data_cat,
+                  increment = sequence,
+                  output_path = spec_path,
+                  c('2000','2001'),
+                  lc_category = glue::glue('CAT_prop_lcClass_{i}'))
+}
 
+#' Broader graphing - 1990 to 2008
+## generate plot - sifting through outputs in finder
+path_1990_2008 <- '3_visualize/land_cover_review/yr1990_2008'
+dir.create(path,showWarnings = FALSE)
 
+for(i in 1:9){
+  spec_path <- file.path(path_1990_2008, glue::glue('CAT_prop_lcClass_{i}'))
+  dir.create(spec_path, showWarnings = FALSE)
 
-#' 3. Review proportion by lc diff - bot plot
+  lulc_00_01_plot(p2_all_lulc_data_cat,
+                  increment = sequence,
+                  output_path = spec_path,
+                  c('1990','2000','2001','2008'),
+                  lc_category = glue::glue('CAT_prop_lcClass_{i}'))
+  }
 
+#' 2. Review proportion by lc diff - bot plot
+library(viridis)
+
+year_filter <- c('2000','2001') 
 #' Tidy
-# lulc_00_01 <- p2_all_lulc_data_cat %>%
-#   filter(Year %in% c('2000','2001')) %>%
-#   arrange(PRMS_segid) 
+lulc_00_01_subset <- p2_all_lulc_data_cat %>%
+  filter(Year %in% year_filter) %>%
+  arrange(PRMS_segid) %>% 
+  pivot_longer(cols = starts_with('CAT'),
+               names_to = 'LC_category',
+               values_to = 'proportion_LC')
 
-#'plot boxplot
+plt1 <- ggplot2::ggplot(lulc_00_01_subset,
+                       # Only plotting 1 class for now. MUST plot across all lc classes!!!! 
+                       aes(x = Year, y = proportion_LC, fill = Year))+
+  geom_boxplot(outlier.shape = 1, 
+               outlier.size = 0.5, outlier.color = 'black',
+               outlier.fill = 'grey', outlier.stroke = 0.2)+
+  scale_fill_viridis(discrete = TRUE, alpha=0.6, option="C")+
+  geom_jitter(color="grey", size=0.4, alpha=0.5)+
+  facet_grid(.~LC_category)+theme_classic()
+
+plt1
 
 
+plt1_class_subset <- ggplot2::ggplot(lulc_00_01_subset %>%
+                                 filter(grepl('5|7|8|9|1|4',LC_category)),
+                               aes(x = Year, y = proportion_LC, fill = Year))+
+  geom_boxplot(outlier.shape = 1, 
+               outlier.size = 0.5, outlier.color = 'black',
+               outlier.fill = 'grey', outlier.stroke = 0.2)+
+  scale_fill_viridis(discrete = TRUE, alpha=0.6, option="C")+
+  geom_jitter(color="grey", size=0.4, alpha=0.5)+
+  facet_grid(.~LC_category)+
+  theme_classic()
+
+plt1_class_subset
+
+#' Remove outliers
+
+lulc_00_01_subset_outlier_filter <- lulc_00_01_subset%>%
+  group_by(LC_category,Year) %>% 
+  mutate(proportion_LC = as.numeric(proportion_LC),
+         proportion_LC_filt = case_when(proportion_LC - quantile(proportion_LC)[4] > 1.5*IQR(proportion_LC) ~ NA_real_,
+                                        quantile(proportion_LC)[2] - proportion_LC > 1.5*IQR(proportion_LC) ~ NA_real_,
+                                        TRUE ~ proportion_LC))
+
+plt2 <- ggplot2::ggplot(lulc_00_01_subset_outlier_filter,
+                        # Only plotting 1 class for now. MUST plot across all lc classes!!!! 
+                        aes(x = Year, y = proportion_LC_filt, fill = Year))+
+  geom_boxplot(outlier.shape = 1, 
+               outlier.size = 0.5, outlier.color = 'black',
+               outlier.fill = 'grey', outlier.stroke = 0.2)+
+  scale_fill_viridis(discrete = TRUE, alpha=0.6, option="C")+
+  #geom_jitter(color="grey", size=0.4, alpha=0.5)+
+  facet_grid(.~LC_category)+theme_classic()
+
+plt2
+
+plt2_class_subset <- ggplot2::ggplot(lulc_00_01_subset_outlier_filter %>%
+                                 filter(grepl('5|7|8|9|1|4',LC_category)),
+                               aes(x = Year, y = proportion_LC_filt, fill = Year))+
+  geom_boxplot(outlier.shape = 1, 
+               outlier.size = 0.5, outlier.color = 'black',
+               outlier.fill = 'grey', outlier.stroke = 0.2)+
+  scale_fill_viridis(discrete = TRUE, alpha=0.6, option="C")+
+  #geom_jitter(color="grey", size=0.4, alpha=0.5)+
+  facet_grid(.~LC_category)+
+  theme_classic()
+
+plt2_class_subset
+
+plt2_class_subset_2 <- ggplot2::ggplot(lulc_00_01_subset_outlier_filter %>%
+                                       filter(grepl('5|7|8',LC_category)),
+                                     aes(x = Year, y = proportion_LC_filt, fill = Year))+
+  geom_boxplot(outlier.shape = 1, 
+               outlier.size = 0.5, outlier.color = 'black',
+               outlier.fill = 'grey', outlier.stroke = 0.2)+
+  scale_fill_viridis(discrete = TRUE, alpha=0.6, option="C")+
+  #geom_jitter(color="grey", size=0.4, alpha=0.5)+
+  facet_grid(.~LC_category)+
+  theme_classic()
+
+plt2_class_subset_2
+
+#' Add more years
+year_filter <- c('1990','2000','2001','2008')
+#' Tidy
+lulc_00_01_subset <- p2_all_lulc_data_cat %>%
+  filter(Year %in% year_filter) %>%
+  arrange(PRMS_segid) %>% 
+  pivot_longer(cols = starts_with('CAT'),
+               names_to = 'LC_category',
+               values_to = 'proportion_LC')
+
+plt3 <- ggplot2::ggplot(lulc_00_01_subset,
+                        # Only plotting 1 class for now. MUST plot across all lc classes!!!! 
+                        aes(x = Year, y = proportion_LC, fill = Year))+
+  geom_boxplot(outlier.shape = 1, 
+               outlier.size = 0.5, outlier.color = 'black',
+               outlier.fill = 'grey', outlier.stroke = 0.2)+
+  scale_fill_viridis(discrete = TRUE, alpha=0.6, option="C")+
+  geom_jitter(color="grey", size=0.4, alpha=0.5)+
+  facet_grid(.~LC_category)+theme_classic()
+
+plt3
+
+plt3_class_subset <- ggplot2::ggplot(lulc_00_01_subset %>%
+                                       filter(grepl('5|7|8|9|1|4',LC_category)),
+                                     aes(x = Year, y = proportion_LC, fill = Year))+
+  geom_boxplot(outlier.shape = 1, 
+               outlier.size = 0.5, outlier.color = 'black',
+               outlier.fill = 'grey', outlier.stroke = 0.2)+
+  scale_fill_viridis(discrete = TRUE, alpha=0.6, option="C")+
+  #geom_jitter(color="grey", size=0.4, alpha=0.5)+
+  facet_grid(.~LC_category)+
+  theme_classic()
+
+plt3_class_subset
+
+plt3_class_subset_2 <- ggplot2::ggplot(lulc_00_01_subset %>%
+                                       filter(grepl('5|7|8',LC_category)),
+                                     aes(x = Year, y = proportion_LC, fill = Year))+
+  geom_boxplot(outlier.shape = 1, 
+               outlier.size = 0.5, outlier.color = 'black',
+               outlier.fill = 'grey', outlier.stroke = 0.2)+
+  scale_fill_viridis(discrete = TRUE, alpha=0.6, option="C")+
+  #geom_jitter(color="grey", size=0.4, alpha=0.5)+
+  facet_grid(.~LC_category)+
+  theme_classic()
+
+plt3_class_subset_2
