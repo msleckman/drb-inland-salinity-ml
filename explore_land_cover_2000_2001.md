@@ -111,7 +111,11 @@ lulc_00_01_subset <- all_lulc_data %>%
   pivot_longer(cols = starts_with(pref),
                names_to = 'LC_category',
                values_to = 'proportion_LC')
+```
 
+1.  initial plot
+
+``` r
 plt1 <- ggplot2::ggplot(lulc_00_01_subset,
                        # Only plotting 1 class for now. MUST plot across all lc classes!!!! 
                        aes(x = Year, y = proportion_LC, fill = Year))+
@@ -125,7 +129,7 @@ plt1 <- ggplot2::ggplot(lulc_00_01_subset,
 plt1
 ```
 
-![](explore_land_cover_2000_2001_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
+![](explore_land_cover_2000_2001_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
 
 ``` r
 plt1_class_subset <- ggplot2::ggplot(lulc_00_01_subset %>%
@@ -142,7 +146,7 @@ plt1_class_subset <- ggplot2::ggplot(lulc_00_01_subset %>%
 plt1_class_subset
 ```
 
-![](explore_land_cover_2000_2001_files/figure-gfm/unnamed-chunk-7-2.png)<!-- -->
+![](explore_land_cover_2000_2001_files/figure-gfm/unnamed-chunk-8-2.png)<!-- -->
 
 ``` r
 plt1_class_subset_2 <- ggplot2::ggplot(lulc_00_01_subset %>%
@@ -159,13 +163,15 @@ plt1_class_subset_2 <- ggplot2::ggplot(lulc_00_01_subset %>%
 plt1_class_subset_2
 ```
 
-![](explore_land_cover_2000_2001_files/figure-gfm/unnamed-chunk-7-3.png)<!-- -->
+![](explore_land_cover_2000_2001_files/figure-gfm/unnamed-chunk-8-3.png)<!-- -->
 
 ``` r
 # Some outliers causing difficulty in graphing
 ```
 
-Remove outliers
+2.  Removing outliers
+
+Note: a number of NAs are removed due to filtering out of outliers
 
 ``` r
 lulc_00_01_subset_outlier_filter <- lulc_00_01_subset %>%
@@ -192,7 +198,7 @@ plt2
 
     ## Warning: Removed 681 rows containing missing values (geom_point).
 
-![](explore_land_cover_2000_2001_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->
+![](explore_land_cover_2000_2001_files/figure-gfm/unnamed-chunk-9-1.png)<!-- -->
 
 ``` r
 plt2_class_subset <- ggplot2::ggplot(lulc_00_01_subset_outlier_filter %>%
@@ -211,7 +217,7 @@ plt2_class_subset
 
     ## Warning: Removed 633 rows containing non-finite values (stat_boxplot).
 
-![](explore_land_cover_2000_2001_files/figure-gfm/unnamed-chunk-8-2.png)<!-- -->
+![](explore_land_cover_2000_2001_files/figure-gfm/unnamed-chunk-9-2.png)<!-- -->
 
 ``` r
 plt2_class_subset_2 <- ggplot2::ggplot(lulc_00_01_subset_outlier_filter %>%
@@ -230,9 +236,9 @@ plt2_class_subset_2
 
     ## Warning: Removed 280 rows containing non-finite values (stat_boxplot).
 
-![](explore_land_cover_2000_2001_files/figure-gfm/unnamed-chunk-8-3.png)<!-- -->
+![](explore_land_cover_2000_2001_files/figure-gfm/unnamed-chunk-9-3.png)<!-- -->
 
-Add more years - outliers NOT removed
+3.  Adding more years - outliers NOT removed
 
 ``` r
 year_filter <- c('1990','2000','2001','2008')
@@ -261,7 +267,7 @@ plt3 <- ggplot2::ggplot(lulc_00_01_subset,
 plt3
 ```
 
-![](explore_land_cover_2000_2001_files/figure-gfm/unnamed-chunk-10-1.png)<!-- -->
+![](explore_land_cover_2000_2001_files/figure-gfm/unnamed-chunk-11-1.png)<!-- -->
 
 ``` r
 plt3_class_subset <- ggplot2::ggplot(lulc_00_01_subset %>%
@@ -278,7 +284,7 @@ plt3_class_subset <- ggplot2::ggplot(lulc_00_01_subset %>%
 plt3_class_subset
 ```
 
-![](explore_land_cover_2000_2001_files/figure-gfm/unnamed-chunk-10-2.png)<!-- -->
+![](explore_land_cover_2000_2001_files/figure-gfm/unnamed-chunk-11-2.png)<!-- -->
 
 ``` r
 plt3_class_subset_2 <- ggplot2::ggplot(lulc_00_01_subset %>%
@@ -295,4 +301,4 @@ plt3_class_subset_2 <- ggplot2::ggplot(lulc_00_01_subset %>%
 plt3_class_subset_2
 ```
 
-![](explore_land_cover_2000_2001_files/figure-gfm/unnamed-chunk-10-3.png)<!-- -->
+![](explore_land_cover_2000_2001_files/figure-gfm/unnamed-chunk-11-3.png)<!-- -->
