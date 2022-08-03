@@ -24,12 +24,12 @@ p2_all_lulc_data_cat_rd <- p2_all_lulc_data_cat %>%
 p2_all_lulc_data_tot_rd <- p2_all_lulc_data_tot %>%
   mutate(across(all_of(lc_prop_cols), round, 3))
 
-
 ## uncomment this line below to see all graphs with rounded values
 # p2_all_lulc_data_cat <- p2_all_lulc_data_cat_rd 
+# p2_all_lulc_data_tot <- p2_all_lulc_data_tot_rd 
 
 #' ### Initial point plot of diff per PRMS_segid
-
+#' 
 #' Splitting comid total values to a seq that is more easily plotted
 sequence <- seq(27,459,17)
 
