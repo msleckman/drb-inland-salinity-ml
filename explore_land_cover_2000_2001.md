@@ -1,7 +1,7 @@
 Review lulc doc
 ================
 Margaux
-2022-08-02
+2022-08-04
 
 ``` r
 suppressPackageStartupMessages(
@@ -9,10 +9,26 @@ suppressPackageStartupMessages(
   library(rmarkdown)
   library(patchwork)
   library(viridis)
+  library(dplyr)
   }
   )
+
 targets::tar_load(p2_all_lulc_data_cat)
 targets::tar_load(p2_all_lulc_data_tot)
+
+# Round targets
+lc_prop_cols_cat <- names(p2_all_lulc_data_cat)[grepl('CAT', names(p2_all_lulc_data_cat))]
+lc_prop_cols_tot <- names(p2_all_lulc_data_cat)[grepl('TOT', names(p2_all_lulc_data_cat))]
+
+p2_all_lulc_data_cat_rd <- p2_all_lulc_data_cat %>%
+  dplyr::mutate(across(all_of(lc_prop_cols_cat), round, 3))
+
+p2_all_lulc_data_tot_rd <- p2_all_lulc_data_tot %>%
+  dplyr::mutate(across(all_of(lc_prop_cols_tot), round, 3))
+
+## uncomment this line below to see all graphs with rounded values
+# p2_all_lulc_data_cat <- p2_all_lulc_data_cat_rd 
+# p2_all_lulc_data_tot <- p2_all_lulc_data_tot_rd 
 ```
 
 ### Initial point plot of diff per PRMS_segid
@@ -156,7 +172,7 @@ plt1_class_subset_2 <- ggplot2::ggplot(lulc_00_01_subset %>%
                outlier.size = 0.5, outlier.color = 'black',
                outlier.fill = 'grey', outlier.stroke = 0.2)+
   scale_fill_viridis(discrete = TRUE, alpha=0.6, option="C")+
-  geom_jitter(color="grey", size=0.4, alpha=0.5)+
+  #geom_jitter(color="grey", size=0.4, alpha=0.5)+
   facet_grid(.~LC_category)+
   theme_classic()
 

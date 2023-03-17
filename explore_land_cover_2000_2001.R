@@ -9,6 +9,7 @@ suppressPackageStartupMessages(
   library(rmarkdown)
   library(patchwork)
   library(viridis)
+  library(dplyr)
   }
   )
 
@@ -16,13 +17,14 @@ targets::tar_load(p2_all_lulc_data_cat)
 targets::tar_load(p2_all_lulc_data_tot)
 
 # Round targets
-lc_prop_cols <- names(p2_all_lulc_data_cat)[grepl('CAT', names(p2_all_lulc_data_cat))]
+lc_prop_cols_cat <- names(p2_all_lulc_data_cat)[grepl('CAT', names(p2_all_lulc_data_cat))]
+lc_prop_cols_tot <- names(p2_all_lulc_data_cat)[grepl('TOT', names(p2_all_lulc_data_cat))]
 
 p2_all_lulc_data_cat_rd <- p2_all_lulc_data_cat %>%
-  mutate(across(all_of(lc_prop_cols), round, 3))
+  dplyr::mutate(across(all_of(lc_prop_cols_cat), round, 3))
 
 p2_all_lulc_data_tot_rd <- p2_all_lulc_data_tot %>%
-  mutate(across(all_of(lc_prop_cols), round, 3))
+  dplyr::mutate(across(all_of(lc_prop_cols_tot), round, 3))
 
 ## uncomment this line below to see all graphs with rounded values
 # p2_all_lulc_data_cat <- p2_all_lulc_data_cat_rd 
